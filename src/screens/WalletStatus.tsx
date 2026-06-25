@@ -1,6 +1,6 @@
 import { useConnect, useDisconnect } from "wagmi";
-import { injected, walletConnect } from "wagmi/connectors";
 import { useMiniPay } from "../hooks/useMiniPay";
+import { injected } from "wagmi/connectors";
 import { CeloBadge } from "../components/CeloBadge";
 import { FEATURED_TOKENS } from "../config/stablecoins";
 
