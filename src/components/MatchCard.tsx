@@ -42,7 +42,7 @@ function getMatchBadge(match: MatchData) {
   }
 
   if (match.source === "espn") {
-    return "ESPN schedule";
+    return "Confirmed schedule";
   }
 
   return match.competition;
@@ -196,7 +196,7 @@ export function MatchCard({ match }: { match: MatchData }) {
             marginTop: 8,
           }}
         >
-          Schedule only · register this match on-chain to enable picks
+          
         </div>
       )}
 

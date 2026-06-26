@@ -2,7 +2,6 @@ import { useMemo } from "react";
 
 import type { MatchData } from "../components/MatchCard";
 import {
-  CAMPAIGN_ID,
   COPA_MATCHES,
   matchStatus,
   type MatchConfig,
@@ -10,8 +9,6 @@ import {
 import { useEspnScores, type EspnMatch } from "./useEspnScores";
 
 const ESPN_LEAGUE = "fifa.world";
-const LOCK_MINUTES_BEFORE_KICKOFF = 30;
-const SCHEDULE_LOOKAHEAD_DAYS = 10;
 
 function toEspnDateUTC(date: Date) {
   const year = date.getUTCFullYear();
@@ -21,15 +18,14 @@ function toEspnDateUTC(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function buildScheduleDates(days: number) {
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
+function buildDatesFromRegisteredMatches() {
+  const dates = new Set<string>();
 
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(start);
-    date.setUTCDate(start.getUTCDate() + index);
-    return toEspnDateUTC(date);
+  COPA_MATCHES.forEach((match) => {
+    dates.add(toEspnDateUTC(new Date(match.kickoffAt)));
   });
+
+  return Array.from(dates);
 }
 
 function normalizeTeamName(value: string) {
@@ -56,104 +52,114 @@ function teamsMatch(local: MatchConfig, live: EspnMatch) {
   );
 }
 
-function findRegisteredMatch(
-  live: EspnMatch,
-  usedLocalIds: Set<string>
-): MatchConfig | null {
-  const byTeams = COPA_MATCHES.find(
-    (match) => !usedLocalIds.has(match.id) && teamsMatch(match, live)
-  );
+function getLiveEspnId(live: EspnMatch) {
+  return "espnId" in live ? String(live.espnId) : String(live.id);
+}
 
-  if (byTeams) {
-    return byTeams;
+function getLiveKickoffAt(live: EspnMatch) {
+  if ("kickoffAt" in live && typeof live.kickoffAt === "number") {
+    return live.kickoffAt;
   }
 
-  const closeByKickoff = COPA_MATCHES.filter((match) => {
-    if (usedLocalIds.has(match.id)) return false;
+  return new Date(live.date).getTime();
+}
 
-    const diff = Math.abs(match.kickoffAt - live.kickoffAt);
-    return diff <= 31 * 60 * 1000;
-  });
-
-  if (closeByKickoff.length === 1) {
-    return closeByKickoff[0];
+function getLiveVenue(live: EspnMatch) {
+  if ("venue" in live && typeof live.venue === "string") {
+    return live.venue;
   }
 
   return null;
 }
 
-function mapLiveStatus(
-  live: EspnMatch,
-  lockedAt: number,
-  kickoffAt: number
-): MatchData["status"] {
-  if (live.status === "in_progress") return "live";
-  if (live.status === "final") return "finished";
+function getLiveStatusText(live: EspnMatch) {
+  if ("statusText" in live && typeof live.statusText === "string") {
+    return live.statusText;
+  }
 
-  const now = Date.now();
-
-  if (now < lockedAt) return "open";
-  if (now < kickoffAt) return "locked";
-
-  return "locked";
+  return "";
 }
 
-function staticToMatchData(match: MatchConfig): MatchData {
+function findEspnMatchForRegisteredMatch(
+  registeredMatch: MatchConfig,
+  espnMatches: EspnMatch[]
+) {
+  const byTeams = espnMatches.find((live) =>
+    teamsMatch(registeredMatch, live)
+  );
+
+  if (byTeams) return byTeams;
+
+  const byKickoff = espnMatches.filter((live) => {
+    const diff = Math.abs(registeredMatch.kickoffAt - getLiveKickoffAt(live));
+    return diff <= 31 * 60 * 1000;
+  });
+
+  if (byKickoff.length === 1) return byKickoff[0];
+
+  return null;
+}
+
+function mapStatus(
+  registeredMatch: MatchConfig,
+  liveMatch: EspnMatch | null
+): MatchData["status"] {
+  if (liveMatch?.status === "in_progress") return "live";
+  if (liveMatch?.status === "final") return "finished";
+
+  return matchStatus(registeredMatch);
+}
+
+function toConfirmedMatchData(
+  registeredMatch: MatchConfig,
+  liveMatch: EspnMatch | null
+): MatchData {
   return {
-    id: match.id,
-    campaignId: match.campaignId,
-    home: match.home,
-    away: match.away,
-    homeFlag: match.homeFlag,
-    awayFlag: match.awayFlag,
-    competition: match.competition,
-    kickoff: new Date(match.kickoffAt),
-    lockedAt: new Date(match.lockedAt),
-    status: matchStatus(match),
-    source: "local",
+    id: registeredMatch.id,
+    campaignId: registeredMatch.campaignId,
+
+    home: liveMatch?.home ?? registeredMatch.home,
+    away: liveMatch?.away ?? registeredMatch.away,
+
+    homeFlag: registeredMatch.homeFlag,
+    awayFlag: registeredMatch.awayFlag,
+
+    competition: registeredMatch.competition,
+    kickoff: new Date(registeredMatch.kickoffAt),
+    lockedAt: new Date(registeredMatch.lockedAt),
+
+    status: mapStatus(registeredMatch, liveMatch),
+
+    source: liveMatch ? "espn" : "local",
+    espnId: liveMatch ? getLiveEspnId(liveMatch) : undefined,
+    venue: liveMatch ? getLiveVenue(liveMatch) : null,
+    clock: liveMatch?.clock,
+    statusText: liveMatch ? getLiveStatusText(liveMatch) : "",
+
+    homeScore: liveMatch?.homeScore ?? null,
+    awayScore: liveMatch?.awayScore ?? null,
+
     canPredict: true,
   };
 }
 
-function liveToMatchData(
-  live: EspnMatch,
-  registeredMatch: MatchConfig | null
-): MatchData {
-  const kickoffAt = live.kickoffAt;
-  const lockedAt =
-    registeredMatch?.lockedAt ??
-    kickoffAt - LOCK_MINUTES_BEFORE_KICKOFF * 60 * 1000;
-
-  return {
-    id: registeredMatch?.id ?? `espn-${live.espnId}`,
-    campaignId: registeredMatch?.campaignId ?? CAMPAIGN_ID,
-
-    home: live.home,
-    away: live.away,
-    homeFlag: registeredMatch?.homeFlag ?? "",
-    awayFlag: registeredMatch?.awayFlag ?? "",
-
-    competition: registeredMatch?.competition ?? "FIFA World Cup 2026",
-    kickoff: new Date(kickoffAt),
-    lockedAt: new Date(lockedAt),
-    status: mapLiveStatus(live, lockedAt, kickoffAt),
-
-    source: "espn",
-    espnId: live.espnId,
-    venue: live.venue,
-    clock: live.clock,
-    statusText: live.statusText,
-    homeScore: live.homeScore,
-    awayScore: live.awayScore,
-    canPredict: Boolean(registeredMatch),
+function sortMatches(a: MatchData, b: MatchData) {
+  const priority: Record<MatchData["status"], number> = {
+    live: 0,
+    open: 1,
+    locked: 2,
+    finished: 3,
   };
+
+  const statusDiff = priority[a.status] - priority[b.status];
+
+  if (statusDiff !== 0) return statusDiff;
+
+  return a.kickoff.getTime() - b.kickoff.getTime();
 }
 
 export function useLiveWorldCupMatches() {
-  const dates = useMemo(
-    () => buildScheduleDates(SCHEDULE_LOOKAHEAD_DAYS),
-    []
-  );
+  const dates = useMemo(() => buildDatesFromRegisteredMatches(), []);
 
   const {
     matches: espnMatches,
@@ -162,29 +168,14 @@ export function useLiveWorldCupMatches() {
   } = useEspnScores(ESPN_LEAGUE, dates);
 
   const matches = useMemo(() => {
-    if (espnMatches.length === 0) {
-      return COPA_MATCHES.map(staticToMatchData);
-    }
+    return COPA_MATCHES.map((registeredMatch) => {
+      const liveMatch = findEspnMatchForRegisteredMatch(
+        registeredMatch,
+        espnMatches
+      );
 
-    const usedLocalIds = new Set<string>();
-
-    const liveCards = espnMatches.map((live) => {
-      const registeredMatch = findRegisteredMatch(live, usedLocalIds);
-
-      if (registeredMatch) {
-        usedLocalIds.add(registeredMatch.id);
-      }
-
-      return liveToMatchData(live, registeredMatch);
-    });
-
-    const localOnlyCards = COPA_MATCHES.filter(
-      (match) => !usedLocalIds.has(match.id)
-    ).map(staticToMatchData);
-
-    return [...liveCards, ...localOnlyCards].sort(
-      (a, b) => a.kickoff.getTime() - b.kickoff.getTime()
-    );
+      return toConfirmedMatchData(registeredMatch, liveMatch);
+    }).sort(sortMatches);
   }, [espnMatches]);
 
   return {

@@ -50,12 +50,22 @@ export function Predictions() {
   const { language, copy } = useLanguage();
 
   const {
-    matches: allMatches,
-    isLoading,
-    error,
-    hasLiveData,
+  matches: allMatches,
+  isLoading,
+  error,
+  hasLiveData,
   } = useLiveWorldCupMatches();
 
+  const liveMatches = allMatches.filter((match) => match.status === "live");
+
+  const nextMatches = allMatches.filter(
+    (match) => match.status === "open" || match.status === "locked"
+  );
+
+  const finishedMatches = allMatches.filter(
+    (match) => match.status === "finished"
+  );
+  
   const openMatches = allMatches.filter((match) => match.status === "open");
 
   const lockedLiveOrFinished = allMatches.filter(
@@ -153,6 +163,36 @@ export function Predictions() {
           <div className="card" style={{ marginBottom: 14 }}>
             Loading live World Cup schedule…
           </div>
+        )}
+
+        {liveMatches.length > 0 && (
+          <>
+            <div className="section-title">Live now</div>
+
+            {liveMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </>
+        )}
+
+        {nextMatches.length > 0 && (
+          <>
+            <div className="section-title">Next matches</div>
+
+            {nextMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </>
+        )}
+
+        {finishedMatches.length > 0 && (
+          <>
+            <div className="section-title">Finished</div>
+
+            {finishedMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </>
         )}
 
         {openMatches.length > 0 && (
