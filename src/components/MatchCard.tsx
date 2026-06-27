@@ -33,7 +33,7 @@ function getMatchBadge(
   copy: ReturnType<typeof useLanguage>["copy"],
 ) {
   if (match.status === "live") {
-    return match.clock ? `${copy.matches.live} · ${match.clock}` : copy.matches.live;
+    return match.clock ? `${copy.matches.live} - ${match.clock}` : copy.matches.live;
   }
 
   if (match.status === "finished") return "FT";
@@ -67,7 +67,7 @@ function getStatusLabel(
   copy: ReturnType<typeof useLanguage>["copy"],
 ) {
   if (match.status === "live") {
-    return match.clock ? `${copy.matches.live} · ${match.clock}` : copy.matches.live;
+    return match.clock ? `${copy.matches.live} - ${match.clock}` : copy.matches.live;
   }
   if (match.status === "finished") return "FT";
   if (match.status === "locked") return copy.matches.locked;

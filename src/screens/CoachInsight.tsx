@@ -4,6 +4,7 @@ import { CeloBadge } from "../components/CeloBadge";
 import { useHasActiveCoachPass } from "../hooks/useMangoalLedger";
 import { getMatchById } from "../config/matches";
 import { useEspnScores, findMatch } from "../hooks/useEspnScores";
+import { useLanguage } from "../i18n";
 
 type InsightData = {
   suggestedScore: string;
@@ -48,6 +49,7 @@ export function CoachInsight() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { address } = useAccount();
+  const { language } = useLanguage();
   const { hasPass } = useHasActiveCoachPass(address);
 
   const match = getMatchById(id ?? "");
@@ -59,7 +61,8 @@ export function CoachInsight() {
     : undefined;
   const { matches: espnMatches, isLoading: liveLoading } = useEspnScores(
     "fifa.world",
-    matchDate
+    matchDate,
+    language
   );
   const live = match ? findMatch(espnMatches, match.home, match.away) : null;
 

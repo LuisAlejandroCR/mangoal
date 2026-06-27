@@ -9,6 +9,10 @@ lets the user submit a free score prediction, and records the prediction through
 commit-reveal audit trail on Celo Mainnet. Mangooal does not custody funds or private keys.
 It is free to play: no entry fees, no odds, no user-funded prize pools, and no staking.
 
+The source of truth for match schedules and live scores is external football data APIs.
+Local files keep only app configuration such as enabled competitions, contract addresses,
+stablecoins, and registered campaign IDs.
+
 ## Campaign
 
 | Field | Value |
@@ -25,7 +29,7 @@ It is free to play: no entry fees, no odds, no user-funded prize pools, and no s
 ## How the flow works
 
 1. User opens Mangooal in MiniPay or a Celo wallet browser.
-2. Mangooal reads the active World Cup campaign from `src/config/matches.ts`.
+2. Mangooal loads active and upcoming matches from the server-side scores API.
 3. User chooses a match, enters an exact score, and confirms with their wallet.
 4. `useCommitPrediction` creates a random local salt and computes:
    `keccak256(wallet, campaignId, matchId, homeScore, awayScore, salt)`.
@@ -38,6 +42,24 @@ It is free to play: no entry fees, no odds, no user-funded prize pools, and no s
 
 The Coach Pass unlocks deeper match context, not better odds or better points. Promotional
 rewards are operator-signed and operator-funded; they are not funded by player entry fees.
+
+## Match and coach data
+
+Mangooal keeps competition metadata locally, but fixtures and scores should come from APIs.
+
+| Layer | Source |
+|---|---|
+| Live schedules and scores | `/api/scores`, backed by ESPN's soccer scoreboard endpoint |
+| Documented fixture backup | `/api/fixtures?provider=football-data`, backed by football-data.org v4 |
+| Broad fixture/livescore backup | `/api/fixtures?provider=sportmonks`, backed by Sportmonks Football API v3 |
+| Coach context | Public football data from the same provider layer, gated by Coach Pass for deeper analysis |
+
+Provider keys are kept server-side in Vercel environment variables. The client should not
+hardcode future fixtures, API keys, or provider URLs.
+
+When the user switches the app to Spanish, the client sends `lang=es` to `/api/scores`.
+The proxy forwards `lang=es&region=co` to the football provider so country/team names and
+status text can be localized by the API instead of by a hardcoded translation table.
 
 ## Blockchain contract
 
@@ -88,6 +110,8 @@ Required production env vars:
 
 ```bash
 VITE_DEPLOY_BLOCK=0
+FOOTBALL_DATA_API_KEY=
+SPORTMONKS_API_KEY=
 ```
 
 `VITE_DEPLOY_BLOCK` should be set to the MangooalLedger deployment block in production so
@@ -98,6 +122,7 @@ log reads can be scoped to the contract's lifetime.
 | Route | Purpose |
 |---|---|
 | `/` | MiniPay app entry point and active prediction list |
+| `/matches` | Full match list for the selected cup and filter |
 | `/match/:id` | Score prediction screen for one match |
 | `/coach/:id` | Coach insight and Coach Pass upsell |
 | `/coach-pass` | Coach Pass purchase flow |
@@ -117,6 +142,7 @@ src/
     CeloBadge.tsx          Celo/MiniPay status badge
     MatchCard.tsx          match list card
   config/
+    competitions.ts        enabled cups and API league mapping
     matches.ts             campaign, match IDs, kickoff and lock times
     stablecoins.ts         Celo Mainnet stablecoin registry and fee-currency notes
     wagmi.ts               wagmi + Celo Mainnet config
@@ -134,6 +160,7 @@ src/
     analytics.ts           local analytics hooks
   screens/
     Predictions.tsx        active campaign and match list
+    AllMatches.tsx         full match list for one competition
     PredictionDetail.tsx   score input and commit transaction
     CoachInsight.tsx       match context and Coach Pass gate
     CoachPass.tsx          paid analytics pass purchase

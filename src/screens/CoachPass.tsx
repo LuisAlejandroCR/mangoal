@@ -96,7 +96,7 @@ function getPurchaseErrorMessage(error: Error) {
     message.includes("unsupported chain") ||
     message.includes("chain mismatch")
   ) {
-    return "Switch your wallet network to Celo Mainnet and try again.";
+    return "Switch your wallet to Celo and try again.";
   }
 
   return "Coach Pass transaction failed. Please check your wallet and try again.";
@@ -311,9 +311,8 @@ export function CoachPass() {
               lineHeight: 1.55,
             }}
           >
-            COPm is available as a Celo Mainnet option outside MiniPay. Inside
-            MiniPay, Mangooal prioritizes USDC, USDT, and USDm for payment
-            flows.
+            Outside MiniPay, COPm is also available. Inside MiniPay, Mangooal
+            prioritizes USDC, USDT, and USDm.
           </div>
         )}
 
@@ -365,10 +364,6 @@ export function CoachPass() {
             </span>
           </div>
 
-          <div className="audit-row" style={{ borderBottom: "none" }}>
-            <span className="audit-label">Network</span>
-            <span className="audit-value">Celo Mainnet</span>
-          </div>
         </div>
 
         <button
@@ -457,8 +452,7 @@ function PassSuccessView({
               marginBottom: 16,
             }}
           >
-            Your Coach Pass is now live on Celo Mainnet. Deeper match insights
-            are now unlocked.
+            Your Coach Pass is ready. Deeper match insights are now unlocked.
           </p>
 
           <div
@@ -479,19 +473,7 @@ function PassSuccessView({
                 marginBottom: 8,
               }}
             >
-              Recorded on Celo Mainnet
-            </div>
-
-            <div
-              style={{
-                fontSize: 11,
-                fontFamily: "monospace",
-                color: "var(--text-muted)",
-                wordBreak: "break-all",
-                marginBottom: 10,
-              }}
-            >
-              {txHash}
+              Receipt
             </div>
 
             <a
@@ -505,7 +487,7 @@ function PassSuccessView({
                 textDecoration: "none",
               }}
             >
-              View on Celoscan
+              View receipt
             </a>
           </div>
 

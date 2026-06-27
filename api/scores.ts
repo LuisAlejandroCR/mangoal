@@ -42,6 +42,15 @@ function isValidEspnDate(date: string) {
   return /^\d{8}$/.test(date);
 }
 
+function getLocale(searchParams: URLSearchParams) {
+  const lang = searchParams.get("lang") === "es" ? "es" : "en";
+
+  return {
+    lang,
+    region: lang === "es" ? "co" : "us",
+  };
+}
+
 export default async function handler(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -58,6 +67,7 @@ export default async function handler(request: Request): Promise<Response> {
 
   const league = searchParams.get("league") ?? "fifa.world";
   const date = searchParams.get("date") ?? searchParams.get("dates");
+  const locale = getLocale(searchParams);
 
   if (!ALLOWED_LEAGUES.has(league)) {
     return jsonResponse({ error: "unknown league", events: [] }, 400);
@@ -79,6 +89,8 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   espnUrl.searchParams.set("limit", "300");
+  espnUrl.searchParams.set("lang", locale.lang);
+  espnUrl.searchParams.set("region", locale.region);
 
   try {
     const upstream = await fetch(espnUrl.toString(), {

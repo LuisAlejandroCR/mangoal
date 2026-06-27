@@ -6,7 +6,7 @@ import {
   matchStatus,
   type MatchConfig,
 } from "../config/matches";
-import { useEspnScores, type EspnMatch } from "./useEspnScores";
+import { useEspnScores, type EspnMatch, type ScoreLanguage } from "./useEspnScores";
 
 const ESPN_LEAGUE = "fifa.world";
 
@@ -146,14 +146,14 @@ function sortMatches(a: MatchData, b: MatchData) {
   return a.kickoff.getTime() - b.kickoff.getTime();
 }
 
-export function useLiveWorldCupMatches() {
+export function useLiveWorldCupMatches(language: ScoreLanguage = "en") {
   const dates = useMemo(() => buildDatesFromRegisteredMatches(), []);
 
   const {
     matches: espnMatches,
     isLoading,
     error,
-  } = useEspnScores(ESPN_LEAGUE, dates);
+  } = useEspnScores(ESPN_LEAGUE, dates, language);
 
   const matches = useMemo(() => {
     return COPA_MATCHES.map((registeredMatch) => {

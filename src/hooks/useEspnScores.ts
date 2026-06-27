@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 export type EspnStatus = "scheduled" | "in_progress" | "final" | "postponed";
+export type ScoreLanguage = "en" | "es";
 
 export type EspnMatch = {
   espnId: string;
@@ -144,12 +145,14 @@ function normalizeEvents(events: unknown[]): EspnMatch[] {
     .sort((a, b) => a.kickoffAt - b.kickoffAt);
 }
 
-async function fetchEspnDate(league: string, date?: string) {
+async function fetchEspnDate(league: string, date?: string, language: ScoreLanguage = "en") {
   const params = new URLSearchParams({ league });
 
   if (date) {
     params.set("date", date);
   }
+
+  params.set("lang", language);
 
   const response = await fetch(`/api/scores?${params.toString()}`);
 
@@ -163,7 +166,8 @@ async function fetchEspnDate(league: string, date?: string) {
 
 export function useEspnScores(
   league: string,
-  date?: string | string[]
+  date?: string | string[],
+  language: ScoreLanguage = "en"
 ): {
   matches: EspnMatch[];
   isLoading: boolean;
@@ -193,7 +197,7 @@ export function useEspnScores(
             : [undefined];
 
         const results = await Promise.all(
-          dates.map((singleDate) => fetchEspnDate(league, singleDate))
+          dates.map((singleDate) => fetchEspnDate(league, singleDate, language))
         );
 
         const deduped = new Map<string, EspnMatch>();
@@ -226,7 +230,7 @@ export function useEspnScores(
     return () => {
       cancelled = true;
     };
-  }, [league, dateKey]);
+  }, [league, dateKey, language]);
 
   return { matches, isLoading, error };
 }

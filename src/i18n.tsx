@@ -6,6 +6,7 @@ type Copy = {
   common: {
     all: string;
     soon: string;
+    back: string;
   };
   nav: {
     picks: string;
@@ -32,6 +33,14 @@ type Copy = {
     complianceLine1: string;
     complianceLine2: string;
     fallbackNote: string;
+    minipayConnected: string;
+    walletConnected: string;
+    tapBannerToSwitch: string;
+    scheduleFallback: string;
+    loading: string;
+    nextMatches: string;
+    seeAll: string;
+    allMatches: string;
   };
   matches: {
     live: string;
@@ -49,6 +58,7 @@ const COPY: Record<Language, Copy> = {
     common: {
       all: "All",
       soon: "Soon",
+      back: "Back",
     },
     nav: {
       picks: "Picks",
@@ -69,12 +79,20 @@ const COPY: Record<Language, Copy> = {
       actionAll: "All",
       noMatches: "No matches in this view yet. Try Schedule or another cup.",
       roadmapTitle: "Switch cup",
-      currentSource: "Live schedule and scores from ESPN.",
-      futureSource: "Future fixtures are previews until the cup is opened on-chain.",
-      tapToSwitch: "Tap a cup below to switch the match list.",
+      currentSource: "Live schedule and scores.",
+      futureSource: "Future fixtures preview.",
+      tapToSwitch: "Tap this card to switch cups.",
       complianceLine1: "Mangooal is a free-to-play sports prediction game. Not betting. Not gambling.",
       complianceLine2: "No entry fees - No user-funded prize pools - No odds",
-      fallbackNote: "ESPN is the live source. football-data.org is the documented backup candidate for fixtures.",
+      fallbackNote: "Schedule backup is ready.",
+      minipayConnected: "MiniPay connected",
+      walletConnected: "Wallet connected",
+      tapBannerToSwitch: "Tap this card to switch cups",
+      scheduleFallback: "Live schedule is taking longer than expected. Showing saved matches.",
+      loading: "Loading matches...",
+      nextMatches: "Next matches",
+      seeAll: "See all",
+      allMatches: "All matches",
     },
     matches: {
       live: "Live",
@@ -90,6 +108,7 @@ const COPY: Record<Language, Copy> = {
     common: {
       all: "Todo",
       soon: "Pronto",
+      back: "Volver",
     },
     nav: {
       picks: "Picks",
@@ -110,12 +129,20 @@ const COPY: Record<Language, Copy> = {
       actionAll: "Todo",
       noMatches: "No hay partidos en esta vista. Prueba Calendario u otra copa.",
       roadmapTitle: "Cambiar copa",
-      currentSource: "Calendario y marcadores en vivo desde ESPN.",
-      futureSource: "Los proximos partidos son una vista previa hasta abrir la copa on-chain.",
-      tapToSwitch: "Toca una copa abajo para cambiar la lista de partidos.",
+      currentSource: "Calendario y marcadores en vivo.",
+      futureSource: "Vista previa de proximos partidos.",
+      tapToSwitch: "Toca esta tarjeta para cambiar de copa.",
       complianceLine1: "Mangooal es un juego gratis de predicciones deportivas. No es apuestas ni gambling.",
       complianceLine2: "Sin pagos de entrada - Sin pozos financiados por usuarios - Sin cuotas",
-      fallbackNote: "ESPN es la fuente en vivo. football-data.org es el candidato de respaldo documentado para calendarios.",
+      fallbackNote: "El respaldo de calendario esta listo.",
+      minipayConnected: "MiniPay conectado",
+      walletConnected: "Billetera conectada",
+      tapBannerToSwitch: "Toca esta tarjeta para cambiar de copa",
+      scheduleFallback: "El calendario esta tardando mas de lo esperado. Mostrando partidos guardados.",
+      loading: "Cargando partidos...",
+      nextMatches: "Proximos partidos",
+      seeAll: "Ver todos",
+      allMatches: "Todos los partidos",
     },
     matches: {
       live: "En vivo",
