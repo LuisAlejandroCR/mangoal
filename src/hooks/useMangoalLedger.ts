@@ -17,6 +17,8 @@ export const CONTRACT_LIVE = MANGOAL_LEDGER_ADDRESS !== "0x000000000000000000000
 export const MANGOAL_DEPLOY_BLOCK = BigInt(
   (import.meta.env.VITE_DEPLOY_BLOCK as string | undefined) ?? "0"
 );
+const MANGOAL_HISTORY_FALLBACK_BLOCK = 70_582_000n;
+const CELO_LOG_CHUNK_SIZE = 4_900n;
 
 // Pass type constants (mirror MangoalLedger.sol)
 export const PASS_TYPE = {
@@ -25,6 +27,12 @@ export const PASS_TYPE = {
   CAMPAIGN: 3,
   SEASON: 4,
 } as const;
+const PASS_DURATION_SECONDS: Record<number, number> = {
+  [PASS_TYPE.DAILY]: 24 * 60 * 60,
+  [PASS_TYPE.WEEKLY]: 7 * 24 * 60 * 60,
+  [PASS_TYPE.CAMPAIGN]: 30 * 24 * 60 * 60,
+  [PASS_TYPE.SEASON]: 180 * 24 * 60 * 60,
+};
 
 // Token amounts in native units — mirrors operator-configured passPrices in the contract
 export const PASS_AMOUNTS: Record<number, Record<string, bigint>> = {
@@ -165,6 +173,26 @@ function tokenSymbolFromAddress(token: string) {
   return "Token";
 }
 
+function purchaseTimeFromExpiry(passType: number, expiresAt: bigint | number | undefined) {
+  const expiresAtSeconds = Number(expiresAt ?? 0);
+  const duration = PASS_DURATION_SECONDS[passType] ?? 0;
+
+  if (!expiresAtSeconds || !duration) return Date.now();
+  return (expiresAtSeconds - duration) * 1000;
+}
+
+function dedupeCoachPassHistory(items: CoachPassHistoryItem[]) {
+  const seen = new Set<string>();
+
+  return items
+    .filter((item) => {
+      if (seen.has(item.txHash)) return false;
+      seen.add(item.txHash);
+      return true;
+    })
+    .sort((a, b) => b.purchasedAt - a.purchasedAt);
+}
+
 export function useCoachPassHistory(walletAddress?: `0x${string}`) {
   const publicClient = usePublicClient({ chainId: celo.id });
   const [items, setItems] = useState<CoachPassHistoryItem[]>([]);
@@ -181,23 +209,36 @@ export function useCoachPassHistory(walletAddress?: `0x${string}`) {
 
       setIsLoading(true);
       try {
-        const logs = await publicClient.getLogs({
-          address: MANGOAL_LEDGER_ADDRESS,
-          event: {
-            type: "event",
-            name: "CoachPassPurchased",
-            inputs: [
-              { name: "wallet", type: "address", indexed: true },
-              { name: "passType", type: "uint8", indexed: false },
-              { name: "token", type: "address", indexed: false },
-              { name: "amount", type: "uint256", indexed: false },
-              { name: "expiresAt", type: "uint64", indexed: false },
-            ],
-          },
-          args: { wallet: walletAddress },
-          fromBlock: MANGOAL_DEPLOY_BLOCK > 0n ? MANGOAL_DEPLOY_BLOCK : 0n,
-          toBlock: "latest",
-        });
+        const event = {
+          type: "event",
+          name: "CoachPassPurchased",
+          inputs: [
+            { name: "wallet", type: "address", indexed: true },
+            { name: "passType", type: "uint8", indexed: false },
+            { name: "token", type: "address", indexed: false },
+            { name: "amount", type: "uint256", indexed: false },
+            { name: "expiresAt", type: "uint64", indexed: false },
+          ],
+        } as const;
+        const latestBlock = await publicClient.getBlockNumber();
+        const fromBlock = MANGOAL_DEPLOY_BLOCK > 0n
+          ? MANGOAL_DEPLOY_BLOCK
+          : MANGOAL_HISTORY_FALLBACK_BLOCK;
+        const logs = [];
+
+        for (let start = fromBlock; start <= latestBlock; start += CELO_LOG_CHUNK_SIZE + 1n) {
+          const end = start + CELO_LOG_CHUNK_SIZE > latestBlock
+            ? latestBlock
+            : start + CELO_LOG_CHUNK_SIZE;
+          const chunk = await publicClient.getLogs({
+            address: MANGOAL_LEDGER_ADDRESS,
+            event,
+            args: { wallet: walletAddress },
+            fromBlock: start,
+            toBlock: end,
+          });
+          logs.push(...chunk);
+        }
 
         if (cancelled) return;
 
@@ -205,10 +246,13 @@ export function useCoachPassHistory(walletAddress?: `0x${string}`) {
           txHash: log.transactionHash,
           passType: Number(log.args.passType ?? 0),
           tokenSymbol: tokenSymbolFromAddress(String(log.args.token ?? "")),
-          purchasedAt: Number(log.args.expiresAt ?? 0n) * 1000,
+          purchasedAt: purchaseTimeFromExpiry(
+            Number(log.args.passType ?? 0),
+            log.args.expiresAt
+          ),
         }));
 
-        setItems([...onChain, ...getLocalCoachPassHistory(walletAddress)]);
+        setItems(dedupeCoachPassHistory([...onChain, ...getLocalCoachPassHistory(walletAddress)]));
       } catch {
         if (!cancelled) setItems(getLocalCoachPassHistory(walletAddress));
       } finally {
