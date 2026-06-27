@@ -49,7 +49,10 @@ const DETAIL_COPY = {
     submit: "Submit prediction - Free",
     update: "Update pick - Free",
     coachActiveTitle: "Coach Pass active",
-    coachActiveBody: "Use Coach insight before submitting. You can still edit until 30 minutes before kickoff.",
+    coachActiveBody: "Coach suggests this score from public match data. You can still edit until 30 minutes before kickoff.",
+    coachLockedTitle: "Want a sharper pick?",
+    coachLockedBody: "Coach Pass unlocks recent form, match context, and a suggested score before you submit.",
+    unlockCoach: "Unlock Coach Pass",
     connect: "Connect wallet to submit",
     waiting: "Waiting for confirmation...",
     openMiniPay: "Open in MiniPay or connect a Celo wallet",
@@ -82,7 +85,10 @@ const DETAIL_COPY = {
     submit: "Enviar prediccion - Gratis",
     update: "Actualizar pick - Gratis",
     coachActiveTitle: "Coach Pass activo",
-    coachActiveBody: "Usa Coach insight antes de enviar. Puedes editar hasta 30 minutos antes del partido.",
+    coachActiveBody: "Coach sugiere este marcador con datos publicos del partido. Puedes editar hasta 30 minutos antes del partido.",
+    coachLockedTitle: "Quieres un pick mas claro?",
+    coachLockedBody: "Coach Pass desbloquea forma reciente, contexto y marcador sugerido antes de enviar.",
+    unlockCoach: "Desbloquear Coach Pass",
     connect: "Conecta wallet para enviar",
     waiting: "Esperando confirmacion...",
     openMiniPay: "Abre en MiniPay o conecta una wallet de Celo",
@@ -314,12 +320,15 @@ export function PredictionDetail() {
               <>
                 <div className="section-title">{copy.yourForecast}</div>
                 <div className="card forecast-input-card">
-                  {hasPass && (
-                    <div className="coach-pass-advice">
-                      <strong>{copy.coachActiveTitle}</strong>
-                      <span>{copy.coachActiveBody}</span>
-                    </div>
-                  )}
+                  <div className={`coach-pass-advice ${hasPass ? "" : "locked"}`}>
+                    <strong>{hasPass ? copy.coachActiveTitle : copy.coachLockedTitle}</strong>
+                    <span>{hasPass ? copy.coachActiveBody : copy.coachLockedBody}</span>
+                    {!hasPass && (
+                      <button className="coach-inline-action" type="button" onClick={() => navigate("/coach-pass")}>
+                        {copy.unlockCoach}
+                      </button>
+                    )}
+                  </div>
                   <div className="forecast-teams-line">
                     <span>{homeName}</span>
                     <span>{awayName}</span>
@@ -363,16 +372,16 @@ export function PredictionDetail() {
                   <button
                     className="btn btn-primary"
                     onClick={handleSubmit}
-                    disabled={!home || !away || isPending || (!!registeredMatch && !isConnected)}
+                    disabled={!home || !away || isPending || !isConnected}
                   >
-                    {registeredMatch && !isConnected
+                    {!isConnected
                       ? copy.connect
                       : isPending
                         ? copy.waiting
                         : isEditing ? copy.update : copy.submit}
                   </button>
 
-                  {registeredMatch && !isConnected && (
+                  {!isConnected && (
                     <div style={{ textAlign: "center", fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
                       {copy.openMiniPay}
                     </div>

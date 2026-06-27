@@ -33,8 +33,6 @@ function getMatchBadge(
   match: MatchData,
   copy: ReturnType<typeof useLanguage>["copy"],
 ) {
-  if (match.userPick) return copy.matches.yourPick;
-
   if (match.status === "live") {
     return match.clock ? `${copy.matches.live} - ${match.clock}` : copy.matches.live;
   }
@@ -156,12 +154,12 @@ export function MatchCard({ match }: { match: MatchData }) {
                 : "badge"
           }
         >
-          {getMatchBadge(match, copy)}
+          {match.userPick && match.status === "open" ? "Edit pick" : getMatchBadge(match, copy)}
         </span>
 
         <span className="match-time-group">
           <span className="match-time">{getStatusLabel(match, copy, now)}</span>
-          {match.userPick && match.status === "open" && <span className="match-edit-label">Edit</span>}
+
         </span>
       </div>
 
@@ -216,11 +214,6 @@ export function MatchCard({ match }: { match: MatchData }) {
         </div>
       )}
 
-      {match.userPick && (
-        <div className="match-pick-note">
-          {copy.matches.yourPick}
-        </div>
-      )}
     </div>
   );
 }

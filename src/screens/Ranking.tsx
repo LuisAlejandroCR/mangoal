@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useOnChainRanking, type RankEntry } from "../hooks/useOnChainRanking";
 import { CAMPAIGN_ID, CAMPAIGN_DISPLAY_NAME } from "../config/matches";
 
@@ -101,6 +102,7 @@ function RankRow({ entry }: { entry: RankEntry }) {
 }
 
 export function Ranking() {
+  const navigate = useNavigate();
   const { entries, myEntry, isLoading } = useOnChainRanking(CAMPAIGN_ID);
 
   const top3 = entries.slice(0, 3);
@@ -112,13 +114,27 @@ export function Ranking() {
         <span className="topbar-logo">
           <span className="brand-ball-icon" aria-hidden="true" /> <span>Mangoo</span>al
         </span>
-        <span />
+        <div className="topbar-actions">
+          <a className="icon-button" href="/support" aria-label="Legal and support">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.1 9a3 3 0 1 1 5.8 1c-.4.9-1.2 1.4-2 2-.6.4-.9.8-.9 1.6" />
+              <path d="M12 17h.01" />
+            </svg>
+          </a>
+          <button className="icon-button" type="button" aria-label="Notifications" onClick={() => navigate("/support")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="screen-body" style={{ paddingTop: 16 }}>
         {/* Campaign badge */}
         <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}>
-          <span className="badge badge-yellow">🏆 {CAMPAIGN_DISPLAY_NAME}</span>
+          <span className="badge badge-yellow">{CAMPAIGN_DISPLAY_NAME}</span>
           <span className="badge badge-muted">On-chain</span>
         </div>
 

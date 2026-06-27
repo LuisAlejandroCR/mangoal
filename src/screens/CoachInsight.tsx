@@ -68,9 +68,14 @@ function getCoachContext(
     ? `${homeText}. ${awayText}. El modelo favorece a ${leader} por forma publica, localia y estado del partido.`
     : `${homeText}. ${awayText}. The model leans ${leader} using public form, venue context, and current match state.`;
 
+  const homeWin = Math.min(68, Math.max(22, Math.round(40 + advantage * 22)));
+  const awayWin = Math.min(68, Math.max(22, Math.round(40 - advantage * 22)));
+  const draw = Math.max(16, 100 - homeWin - awayWin);
+
   return {
     suggestedScore: `${homeGoals} - ${awayGoals}`,
     confidence: `${confidenceValue}%`,
+    winModel: { home: homeWin, draw, away: awayWin },
     summary,
     drivers: language === "es"
       ? ["Forma ESPN", "Localia", "Estado en vivo", "Volatilidad baja"]
@@ -119,7 +124,7 @@ export function CoachInsight() {
               <path d="M12 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="topbar-logo compact"><span>Mangooal Coach</span></span>
+          <span className="topbar-logo compact"><span className="brand-ball-icon" aria-hidden="true" /> <span>Mangooal Coach</span></span>
           <LanguageToggle />
         </div>
         <div className="screen-body" style={{ paddingTop: 40, textAlign: "center", color: "var(--text-muted)" }}>
@@ -138,7 +143,7 @@ export function CoachInsight() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="topbar-logo compact"><span>Mangooal Coach</span></span>
+        <span className="topbar-logo compact"><span className="brand-ball-icon" aria-hidden="true" /> <span>Mangooal Coach</span></span>
         <LanguageToggle />
       </div>
 
@@ -171,6 +176,11 @@ export function CoachInsight() {
           <div className="coach-score">{coach.suggestedScore}</div>
           <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>
             {c.publicContext} - Confidence {coach.confidence}
+          </div>
+          <div className="coach-win-model">
+            <span>{live?.home ?? match.home}: {coach.winModel.home}%</span>
+            <span>Draw: {coach.winModel.draw}%</span>
+            <span>{live?.away ?? match.away}: {coach.winModel.away}%</span>
           </div>
           <div className="coach-driver-list">
             {coach.drivers.map((driver) => <span key={driver}>{driver}</span>)}

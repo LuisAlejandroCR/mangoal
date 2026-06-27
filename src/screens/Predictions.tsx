@@ -130,7 +130,7 @@ export function Predictions() {
           <label className="cup-select-card">
             <span className="select-card-label">{language === "es" ? "Seleccionar copa" : "Select cup"}</span>
             <strong>{selectedCompetition.marker}</strong>
-            <small>{selectedCompetition.name}</small>
+            <small>{language === "es" ? "Toca para cambiar" : "Tap to change"}</small>
             <select
               value={selectedCompetitionId}
               onChange={(event) => selectCup(event.target.value as CompetitionId)}
@@ -145,6 +145,11 @@ export function Predictions() {
           </label>
         </div>
 
+        <div className="campaign-banner compact-cup-banner">
+          <div className="campaign-eyebrow">{copy.predictions.currentCup}</div>
+          <div className="campaign-title">{selectedCompetition.name}</div>
+          <div className="campaign-meta">{selectedCompetition.description[language]}</div>
+        </div>
 
         <div className="action-filter" aria-label="Match view">
           {([

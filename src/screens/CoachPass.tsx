@@ -161,7 +161,7 @@ export function CoachPass() {
             </svg>
           </button>
         ) : (
-          <span className="topbar-logo compact"><span>{c.title}</span></span>
+          <span className="topbar-logo"><span className="brand-ball-icon" aria-hidden="true" /> <span>Mangoo</span>al</span>
         )}
         <div className="topbar-actions">
           <a className="icon-button" href="/support" aria-label="Legal and support">
@@ -192,6 +192,9 @@ export function CoachPass() {
                 <div key={perk}><span className="status-dot dot-green" />{perk}</div>
               ))}
             </div>
+            <button className="btn btn-primary" onClick={() => navigate("/coach-pass/history")} type="button">
+              {c.history}
+            </button>
           </div>
         ) : view === "overview" ? (
           <>
@@ -220,29 +223,24 @@ export function CoachPass() {
         ) : (
           <>
             <div className="section-title">{c.choose}</div>
-            {PASS_OPTIONS.map((pass) => {
-              const active = selectedPass === pass.id;
-              return (
-                <button
-                  key={pass.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedPass(pass.id);
-                    reset();
-                  }}
-                  className={`pass-card ${active ? "selected" : ""}`}
-                  style={{ width: "100%", background: active ? "#FFF9EC" : "var(--card)", textAlign: "left" }}
-                >
-                  <div className="pass-card-header">
-                    <div>
-                      <div className="pass-type">{pass.label[language]} Pass</div>
-                      <div className="pass-perks">{pass.duration[language]}</div>
-                    </div>
-                    <div className="pass-price">{pass.price[selectedToken.symbol]}</div>
-                  </div>
-                </button>
-              );
-            })}
+            <label className="pass-select-card">
+              <span>{c.choose}</span>
+              <strong>{currentPass.label[language]} Pass</strong>
+              <small>{currentPass.duration[language]} - {currentPass.price[selectedToken.symbol]}</small>
+              <select
+                value={selectedPass}
+                onChange={(event) => {
+                  setSelectedPass(event.target.value);
+                  reset();
+                }}
+              >
+                {PASS_OPTIONS.map((pass) => (
+                  <option key={pass.id} value={pass.id}>
+                    {pass.label[language]} Pass - {pass.price[selectedToken.symbol]}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <div className="section-title">{c.payWith}</div>
             <div className="token-pills">
@@ -301,7 +299,7 @@ function PassSuccessView() {
   return (
     <div className="screen">
       <div className="topbar">
-        <span className="topbar-logo compact"><span>Coach Pass</span></span>
+        <span className="topbar-logo"><span className="brand-ball-icon" aria-hidden="true" /> <span>Mangoo</span>al</span>
         <LanguageToggle />
       </div>
 
@@ -310,7 +308,10 @@ function PassSuccessView() {
           <div className="success-mark">OK</div>
           <h1>{c.active}</h1>
           <p>{c.body}</p>
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/")}>
+          <button type="button" className="btn btn-primary" onClick={() => navigate("/coach-pass/history")}>
+            {language === "es" ? "Historial" : "History"}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => navigate("/")}>
             Done
           </button>
         </div>
