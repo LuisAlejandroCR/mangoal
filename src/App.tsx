@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "./config/wagmi";
@@ -20,11 +20,23 @@ import { LanguageProvider } from "./i18n";
 
 const queryClient = new QueryClient();
 
+type RootTab = "picks" | "ranking" | "my-picks" | "coach-pass";
+
+function RootTabs() {
+  const [searchParams] = useSearchParams();
+  const tab = (searchParams.get("tab") ?? "picks") as RootTab;
+
+  if (tab === "ranking") return <Ranking />;
+  if (tab === "my-picks") return <MyPicks />;
+  if (tab === "coach-pass") return <CoachPass />;
+  return <Predictions />;
+}
+
 function AppShell() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Predictions />} />
+        <Route path="/" element={<RootTabs />} />
         <Route path="/matches" element={<AllMatches />} />
         <Route path="/match/:id" element={<PredictionDetail />} />
         <Route path="/coach/:id" element={<CoachInsight />} />

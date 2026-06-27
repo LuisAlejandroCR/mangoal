@@ -46,7 +46,6 @@ export function Predictions() {
   const liveCount = selectedMatches.filter((match) => match.status === "live").length;
   const scheduleCount = filterMatches(selectedMatches, "schedule").length;
   const finishedCount = filterMatches(selectedMatches, "finished").length;
-  const predictionReadyCount = selectedMatches.filter((match) => match.canPredict !== false).length;
 
   function switchCup() {
     const nextCompetition = getNextCompetition(selectedCompetitionId);
@@ -80,7 +79,7 @@ export function Predictions() {
         </div>
       </div>
 
-      <div className="screen-body picks-body" style={{ paddingTop: 16 }}>
+      <div className="screen-body picks-body">
         <StablecoinBalances />
 
         <button
@@ -93,12 +92,7 @@ export function Predictions() {
             {copy.predictions.now}: {selectedCompetition.name}
           </div>
           <div className="campaign-meta">{selectedCompetition.description[language]}</div>
-          <div className="campaign-pills">
-            <span>{predictionReadyCount} {copy.predictions.freePredictions}</span>
-            <span>{scheduleCount} {copy.predictions.open}</span>
-            <span>{copy.predictions.promoRewards}</span>
-          </div>
-        </button>
+</button>
 
         <div className="action-filter" aria-label="Match view">
           {([

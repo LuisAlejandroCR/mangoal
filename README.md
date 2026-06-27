@@ -57,10 +57,7 @@ Mangooal keeps competition metadata locally, but fixtures and scores should come
 Provider keys are kept server-side in Vercel environment variables. The client should not
 hardcode future fixtures, API keys, or provider URLs.
 
-Scoreboard data refreshes automatically in the client every minute. `/api/scores` tries ESPN
-first and falls back to football-data.org for supported competitions when `FOOTBALL_DATA_API_KEY`
-is configured. Finished matches are available through the `finished` filter for recent results,
-with the full list reachable from `/matches`.
+Scoreboard data refreshes automatically in the client every minute. The World Cup view requests a rolling scoreboard window from two days back through the next eight days, so live, recent finished, and weekend schedule rows can appear even before those matches are registered for on-chain picks. `/api/scores` tries ESPN first and falls back to football-data.org for supported competitions when `FOOTBALL_DATA_API_KEY` is configured. Finished matches are available through the `finished` filter for recent results, with the full list reachable from `/matches`.
 
 When the user switches the app to Spanish, the client sends `lang=es` to `/api/scores`.
 The proxy forwards `lang=es&region=co` to the football provider so country/team names and
@@ -126,14 +123,14 @@ log reads can be scoped to the contract's lifetime.
 
 | Route | Purpose |
 |---|---|
-| `/` | MiniPay app entry point and active prediction list |
+| `/` | MiniPay app entry point. Main tabs use `?tab=picks`, `?tab=ranking`, `?tab=my-picks`, and `?tab=coach-pass` to keep the core app under the root URL. |
 | `/matches` | Full match list for the selected cup and filter |
 | `/match/:id` | Score prediction screen for one match |
 | `/coach/:id` | Coach insight and Coach Pass upsell |
 | `/coach-pass` | Coach Pass purchase flow |
-| `/coach-pass/history` | Coach Pass purchase history from Celo events plus this device fallback |
-| `/ranking` | On-chain leaderboard |
-| `/my-picks` | User prediction history |
+| `/coach-pass/history` | Coach Pass purchase history from Celo events plus this device fallback, with Celoscan proof links and QR receipts |
+| `/ranking` | Direct leaderboard route kept for sharing/support; bottom navigation uses `/?tab=ranking` |
+| `/my-picks` | Direct pick-history route kept for sharing/support; bottom navigation uses `/?tab=my-picks` |
 | `/audit/:id` | On-chain prediction audit screen |
 | `/claim` | Operator-signed promotional reward claim |
 | `/stats` | On-chain campaign stats |
@@ -172,7 +169,7 @@ src/
     OnChainAudit.tsx       commitment and transaction proof
     Ranking.tsx            leaderboard
     RewardClaim.tsx        promotional reward claim flow
-    StablecoinBalances.tsx  compact stablecoin balance UI for Picks
+    StablecoinBalances.tsx  compact stablecoin balance grid for Picks
   App.tsx                  route shell and providers
 contracts/
   MangooalLedger.sol       Celo Mainnet ledger contract

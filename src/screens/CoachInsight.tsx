@@ -7,13 +7,23 @@ import { getMatchById } from "../config/matches";
 import { useEspnScores, findMatch } from "../hooks/useEspnScores";
 import { useLanguage } from "../i18n";
 
-function getCoachContext(home: string, away: string, homeRecord?: string | null, awayRecord?: string | null) {
-  const homeText = homeRecord ? `${home}: ${homeRecord}` : `${home}: form pending`;
-  const awayText = awayRecord ? `${away}: ${awayRecord}` : `${away}: form pending`;
+function getCoachContext(
+  home: string,
+  away: string,
+  language: "en" | "es",
+  homeRecord?: string | null,
+  awayRecord?: string | null
+) {
+  const pending = language === "es" ? "forma pendiente" : "form pending";
+  const homeText = homeRecord ? `${home}: ${homeRecord}` : `${home}: ${pending}`;
+  const awayText = awayRecord ? `${away}: ${awayRecord}` : `${away}: ${pending}`;
+  const summary = language === "es"
+    ? `${homeText}. ${awayText}. Espera un partido equilibrado hasta que haya mas datos publicos de forma reciente.`
+    : `${homeText}. ${awayText}. Expect a balanced match until fresher public form data is available.`;
 
   return {
     suggestedScore: "1 - 1",
-    summary: `${homeText}. ${awayText}. Expect a balanced match until fresher live form data is available.`,
+    summary,
   };
 }
 
@@ -35,8 +45,8 @@ export function CoachInsight() {
   const live = match ? findMatch(espnMatches, match.home, match.away) : null;
 
   const coach = useMemo(
-    () => getCoachContext(live?.home ?? match?.home ?? "", live?.away ?? match?.away ?? "", live?.homeRecord, live?.awayRecord),
-    [live, match]
+    () => getCoachContext(live?.home ?? match?.home ?? "", live?.away ?? match?.away ?? "", language, live?.homeRecord, live?.awayRecord),
+    [language, live, match]
   );
 
   if (!match) {

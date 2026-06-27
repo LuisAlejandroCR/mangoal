@@ -82,11 +82,11 @@ function TeamMark({ value }: { value: string }) {
     return <img className="team-logo" src={value} alt="" aria-hidden="true" loading="lazy" />;
   }
 
-  if (value.length > 4) {
-    return <span>{value} </span>;
+  if (value.length > 4 && !/^[A-Z]{2,4}$/.test(value)) {
+    return <span className="team-emoji" aria-hidden="true">{value}</span>;
   }
 
-  return null;
+  return <span className="team-logo-placeholder" aria-hidden="true" />;
 }
 
 export function MatchCard({ match }: { match: MatchData }) {

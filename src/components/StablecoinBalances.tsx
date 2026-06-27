@@ -16,7 +16,7 @@ export function StablecoinBalances() {
   if (!isConnected) return null;
 
   return (
-    <div className="balance-strip" aria-label="Stablecoin balances">
+    <div className="balance-strip" aria-label="Stablecoin balances" title="Available stablecoins">
       {FEATURED_TOKENS.map((token) => (
         <div className="balance-chip" key={token.symbol}>
           <span className="token-dot" style={{ background: tokenTone(token.symbol) }} />

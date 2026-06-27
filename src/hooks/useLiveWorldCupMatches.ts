@@ -2,7 +2,9 @@ import { useMemo } from "react";
 
 import type { MatchData } from "../components/MatchCard";
 import {
+  CAMPAIGN_ID,
   COPA_MATCHES,
+  CAMPAIGN_DISPLAY_NAME,
   matchStatus,
   type MatchConfig,
 } from "../config/matches";
@@ -18,14 +20,29 @@ function toEspnDateUTC(date: Date) {
   return `${year}${month}${day}`;
 }
 
-function buildDatesFromRegisteredMatches() {
+function buildScoreboardDates() {
   const dates = new Set<string>();
+  const today = new Date();
+
+  for (let offset = -2; offset <= 8; offset += 1) {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() + offset);
+    dates.add(toEspnDateUTC(date));
+  }
 
   COPA_MATCHES.forEach((match) => {
     dates.add(toEspnDateUTC(new Date(match.kickoffAt)));
   });
 
   return Array.from(dates);
+}
+
+function cleanDisplayTeam(value: string) {
+  return value
+    .replace(/\bThird Place Group\b(?:\s+[A-Z](?:\/[A-Z])*)?/gi, "To define")
+    .replace(/\bTPG(?:\s+[A-Z](?:\/[A-Z])*)?/gi, "To define")
+    .replace(/^TBD$/i, "To define")
+    .trim();
 }
 
 function normalizeTeamName(value: string) {
@@ -42,9 +59,7 @@ function teamsMatch(local: MatchConfig, live: EspnMatch) {
   const liveHome = normalizeTeamName(live.home);
   const liveAway = normalizeTeamName(live.away);
 
-  if (localHome === "tbd" || localAway === "tbd") {
-    return false;
-  }
+  if (localHome === "tbd" || localAway === "tbd") return false;
 
   return (
     (liveHome.includes(localHome) || localHome.includes(liveHome)) &&
@@ -52,49 +67,33 @@ function teamsMatch(local: MatchConfig, live: EspnMatch) {
   );
 }
 
-function getLiveEspnId(live: EspnMatch) {
-  return live.espnId;
-}
-
-function getLiveKickoffAt(live: EspnMatch) {
-  return live.kickoffAt;
-}
-
-function getLiveVenue(live: EspnMatch) {
-  return live.venue;
-}
-
-function getLiveStatusText(live: EspnMatch) {
-  return live.statusText;
-}
-
 function findEspnMatchForRegisteredMatch(
   registeredMatch: MatchConfig,
   espnMatches: EspnMatch[]
 ) {
-  const byTeams = espnMatches.find((live) =>
-    teamsMatch(registeredMatch, live)
-  );
-
+  const byTeams = espnMatches.find((live) => teamsMatch(registeredMatch, live));
   if (byTeams) return byTeams;
 
   const byKickoff = espnMatches.filter((live) => {
-    const diff = Math.abs(registeredMatch.kickoffAt - getLiveKickoffAt(live));
+    const diff = Math.abs(registeredMatch.kickoffAt - live.kickoffAt);
     return diff <= 31 * 60 * 1000;
   });
 
   if (byKickoff.length === 1) return byKickoff[0];
-
   return null;
 }
 
-function mapStatus(
+function mapLiveStatus(liveMatch: EspnMatch): MatchData["status"] {
+  if (liveMatch.status === "in_progress") return "live";
+  if (liveMatch.status === "final") return "finished";
+  return "open";
+}
+
+function mapRegisteredStatus(
   registeredMatch: MatchConfig,
   liveMatch: EspnMatch | null
 ): MatchData["status"] {
-  if (liveMatch?.status === "in_progress") return "live";
-  if (liveMatch?.status === "final") return "finished";
-
+  if (liveMatch) return mapLiveStatus(liveMatch);
   return matchStatus(registeredMatch);
 }
 
@@ -105,29 +104,45 @@ function toConfirmedMatchData(
   return {
     id: registeredMatch.id,
     campaignId: registeredMatch.campaignId,
-
-    home: liveMatch?.home ?? registeredMatch.home,
-    away: liveMatch?.away ?? registeredMatch.away,
-
-    homeFlag: registeredMatch.homeFlag,
-    awayFlag: registeredMatch.awayFlag,
-
+    home: cleanDisplayTeam(liveMatch?.home ?? registeredMatch.home),
+    away: cleanDisplayTeam(liveMatch?.away ?? registeredMatch.away),
+    homeFlag: liveMatch?.homeLogo ?? registeredMatch.homeFlag,
+    awayFlag: liveMatch?.awayLogo ?? registeredMatch.awayFlag,
     competition: registeredMatch.competition,
-    kickoff: new Date(registeredMatch.kickoffAt),
+    kickoff: new Date(liveMatch?.kickoffAt ?? registeredMatch.kickoffAt),
     lockedAt: new Date(registeredMatch.lockedAt),
-
-    status: mapStatus(registeredMatch, liveMatch),
-
+    status: mapRegisteredStatus(registeredMatch, liveMatch),
     source: liveMatch ? "espn" : "local",
-    espnId: liveMatch ? getLiveEspnId(liveMatch) : undefined,
-    venue: liveMatch ? getLiveVenue(liveMatch) : null,
+    espnId: liveMatch?.espnId,
+    venue: liveMatch?.venue ?? null,
     clock: liveMatch?.clock,
-    statusText: liveMatch ? getLiveStatusText(liveMatch) : "",
-
+    statusText: liveMatch?.statusText ?? "",
     homeScore: liveMatch?.homeScore ?? null,
     awayScore: liveMatch?.awayScore ?? null,
-
     canPredict: true,
+  };
+}
+
+function toPreviewMatchData(liveMatch: EspnMatch): MatchData {
+  return {
+    id: `world-cup-${liveMatch.espnId}`,
+    campaignId: CAMPAIGN_ID,
+    home: cleanDisplayTeam(liveMatch.home),
+    away: cleanDisplayTeam(liveMatch.away),
+    homeFlag: liveMatch.homeLogo ?? "",
+    awayFlag: liveMatch.awayLogo ?? "",
+    competition: CAMPAIGN_DISPLAY_NAME,
+    kickoff: new Date(liveMatch.kickoffAt),
+    lockedAt: new Date(liveMatch.kickoffAt - 30 * 60 * 1000),
+    status: mapLiveStatus(liveMatch),
+    source: "espn",
+    espnId: liveMatch.espnId,
+    venue: liveMatch.venue,
+    clock: liveMatch.clock,
+    statusText: liveMatch.statusText,
+    homeScore: liveMatch.homeScore,
+    awayScore: liveMatch.awayScore,
+    canPredict: false,
   };
 }
 
@@ -140,14 +155,13 @@ function sortMatches(a: MatchData, b: MatchData) {
   };
 
   const statusDiff = priority[a.status] - priority[b.status];
-
   if (statusDiff !== 0) return statusDiff;
 
   return a.kickoff.getTime() - b.kickoff.getTime();
 }
 
 export function useLiveWorldCupMatches(language: ScoreLanguage = "en") {
-  const dates = useMemo(() => buildDatesFromRegisteredMatches(), []);
+  const dates = useMemo(() => buildScoreboardDates(), []);
 
   const {
     matches: espnMatches,
@@ -156,14 +170,18 @@ export function useLiveWorldCupMatches(language: ScoreLanguage = "en") {
   } = useEspnScores(ESPN_LEAGUE, dates, language);
 
   const matches = useMemo(() => {
-    return COPA_MATCHES.map((registeredMatch) => {
-      const liveMatch = findEspnMatchForRegisteredMatch(
-        registeredMatch,
-        espnMatches
-      );
-
+    const usedEspnIds = new Set<string>();
+    const registered = COPA_MATCHES.map((registeredMatch) => {
+      const liveMatch = findEspnMatchForRegisteredMatch(registeredMatch, espnMatches);
+      if (liveMatch) usedEspnIds.add(liveMatch.espnId);
       return toConfirmedMatchData(registeredMatch, liveMatch);
-    }).sort(sortMatches);
+    });
+
+    const previews = espnMatches
+      .filter((liveMatch) => !usedEspnIds.has(liveMatch.espnId))
+      .map(toPreviewMatchData);
+
+    return [...registered, ...previews].sort(sortMatches);
   }, [espnMatches]);
 
   return {

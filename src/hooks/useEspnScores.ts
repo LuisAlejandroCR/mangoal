@@ -91,8 +91,10 @@ function parseScore(competitor: any): number | null {
 
 function cleanTeamName(value: string) {
   return value
-    .replace(/\bThird Place Group\b/gi, "To define")
-    .replace(/\bTPG\b/g, "To define");
+    .replace(/\bThird Place Group\b(?:\s+[A-Z](?:\/[A-Z])*)?/gi, "To define")
+    .replace(/\bTPG(?:\s+[A-Z](?:\/[A-Z])*)?/gi, "To define")
+    .replace(/^TBD$/i, "To define")
+    .trim();
 }
 
 function normalizeEvents(events: unknown[]): EspnMatch[] {

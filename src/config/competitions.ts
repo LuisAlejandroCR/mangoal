@@ -42,8 +42,8 @@ export const COMPETITIONS: Competition[] = [
     color: "#176B3A",
     current: true,
     description: {
-      en: "Tap this card to switch cups and preview what is coming next.",
-      es: "Toca esta tarjeta para cambiar de copa y ver lo que viene.",
+      en: "Live scores, finished matches, and the upcoming schedule.",
+      es: "Marcadores en vivo, finalizados y proximos partidos.",
     },
   },
   {

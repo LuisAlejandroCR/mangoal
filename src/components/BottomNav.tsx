@@ -1,8 +1,9 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useLanguage } from "../i18n";
 
 const TABS = [
   {
+    tab: "picks",
     path: "/",
     labelKey: "picks",
     icon: (
@@ -13,7 +14,8 @@ const TABS = [
     ),
   },
   {
-    path: "/ranking",
+    tab: "ranking",
+    path: "/?tab=ranking",
     labelKey: "ranking",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -23,7 +25,8 @@ const TABS = [
     ),
   },
   {
-    path: "/my-picks",
+    tab: "my-picks",
+    path: "/?tab=my-picks",
     labelKey: "myPicks",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,7 +36,8 @@ const TABS = [
     ),
   },
   {
-    path: "/coach-pass",
+    tab: "coach-pass",
+    path: "/?tab=coach-pass",
     labelKey: "coachPass",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -45,18 +49,21 @@ const TABS = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { copy } = useLanguage();
+  const activeTab = pathname === "/" ? searchParams.get("tab") ?? "picks" : "";
 
   return (
     <nav className="bottom-nav">
       {TABS.map((tab) => {
         const label = copy.nav[tab.labelKey as keyof typeof copy.nav];
+        const active = pathname === tab.path || activeTab === tab.tab;
 
         return (
           <button
             key={tab.path}
-            className={`nav-item${pathname === tab.path ? " active" : ""}`}
+            className={`nav-item${active ? " active" : ""}`}
             onClick={() => navigate(tab.path)}
             aria-label={label}
           >

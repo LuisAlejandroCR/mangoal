@@ -9,12 +9,23 @@ const PASS_LABELS = {
   es: { 1: "Diario", 2: "Semanal", 3: "Campana", 4: "Temporada" },
 } as const;
 
+function shortHash(value: string) {
+  return `${value.slice(0, 10)}...${value.slice(-8)}`;
+}
+
+function proofUrl(txHash: string) {
+  return `https://celoscan.io/tx/${txHash}`;
+}
+
 export function CoachPassHistory() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const labels = PASS_LABELS[language];
   const { address } = useMiniPay();
   const { items: history, isLoading } = useCoachPassHistory(address as `0x${string}` | undefined);
+  const c = language === "es"
+    ? { title: "Historial", loading: "Cargando...", empty: "Aun no hay compras de Coach Pass para esta cuenta.", proof: "Prueba", qr: "QR del recibo", token: "Pago", tx: "Transaccion" }
+    : { title: "History", loading: "Loading...", empty: "No Coach Pass purchases for this account yet.", proof: "Proof", qr: "Receipt QR", token: "Paid with", tx: "Transaction" };
 
   return (
     <div className="screen">
@@ -25,34 +36,50 @@ export function CoachPassHistory() {
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="topbar-logo compact">
-          <span>Coach Pass</span>
-        </span>
+        <span className="topbar-logo compact"><span>Coach Pass</span></span>
         <LanguageToggle />
       </div>
 
       <div className="screen-body" style={{ paddingTop: 16 }}>
-        <div className="section-title">{language === "es" ? "Historial" : "History"}</div>
-        {isLoading && <div className="card" style={{ marginBottom: 12 }}>{language === "es" ? "Cargando..." : "Loading..."}</div>}
+        <div className="section-title">{c.title}</div>
+        {isLoading && <div className="card" style={{ marginBottom: 12 }}>{c.loading}</div>}
         {history.length > 0 ? (
-          history.map((item) => (
-            <a
-              className="history-row"
-              href={`https://celoscan.io/tx/${item.txHash}`}
-              key={item.txHash}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span>
-                <strong>{labels[item.passType as keyof typeof labels] ?? "Coach"} Pass</strong>
-                <small>{new Date(item.purchasedAt).toLocaleString()}</small>
-              </span>
-              <span>{item.tokenSymbol}</span>
-            </a>
-          ))
+          history.map((item) => {
+            const url = proofUrl(item.txHash);
+            const passLabel = labels[item.passType as keyof typeof labels] ?? "Coach";
+            return (
+              <div className="history-card" key={item.txHash}>
+                <div className="history-main">
+                  <div>
+                    <strong>{passLabel} Pass</strong>
+                    <small>{new Date(item.purchasedAt).toLocaleString()}</small>
+                  </div>
+                  <span>{item.tokenSymbol}</span>
+                </div>
+                <div className="history-detail-row">
+                  <span>{c.token}</span>
+                  <strong>{item.tokenSymbol}</strong>
+                </div>
+                <div className="history-detail-row">
+                  <span>{c.tx}</span>
+                  <code>{shortHash(item.txHash)}</code>
+                </div>
+                <div className="history-proof-row">
+                  <img
+                    alt={c.qr}
+                    className="history-qr"
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=96x96&data=${encodeURIComponent(url)}`}
+                  />
+                  <a className="btn btn-secondary btn-sm" href={url} rel="noreferrer" target="_blank">
+                    {c.proof}
+                  </a>
+                </div>
+              </div>
+            );
+          })
         ) : (
           <div className="card" style={{ textAlign: "center" }}>
-            <strong>{language === "es" ? "Aun no hay compras de Coach Pass para esta cuenta." : "No Coach Pass purchases for this account yet."}</strong>
+            <strong>{c.empty}</strong>
           </div>
         )}
       </div>
