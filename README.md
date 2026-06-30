@@ -162,6 +162,20 @@ Distribution needs budget. Promotional rewards and creator campaigns should be t
 
 Kill slow loops early. It is easier to remove a small feature than to maintain a monster that took months to build. Mangooal should earn expansion by proving that one cup, one pick loop, and one market can generate repeat play.
 
+### Traceable product blocks
+
+These blocks convert the product direction into testable guardrails. Keep each ID in sync with `src/config/productGuardrails.ts` and `npm test`.
+
+| ID | Direction | Testable promise |
+|---|---|---|
+| MG-CORE-001 | One simple loop | Pick scores, compete, and track picks before adding secondary product surfaces. |
+| MG-UX-001 | Mom-test UX | Copy leads with play, compete, picks, reminders, ranking, and optional rewards. |
+| MG-MINIPAY-001 | MiniPay first | MiniPay users auto-connect and complete the pick loop without wallet setup education. |
+| MG-WEB-001 | Public web discovery | Demo, support, matches, stats, and proof links stay reachable before wallet connection. |
+| MG-CONTRACT-001 | Direct user attribution | User actions stay attributable to the user's wallet on Celo for MiniPay, browser, and Proof of Ship metrics. |
+| MG-GROWTH-001 | Earn expansion | New markets, languages, competitions, and rewards must improve retention or repeat picks. |
+| MG-COACH-001 | Coach context only | Coach Pass unlocks public-data match context without changing points, ranking, eligibility, or outcomes. |
+
 ## Public routes
 
 | Route | Purpose |
