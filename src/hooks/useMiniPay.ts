@@ -1,40 +1,30 @@
 import { useEffect, useState } from "react";
-import { useConnect, useAccount } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useAccount } from "wagmi";
 import { analytics } from "../lib/analytics";
 
 /**
- * Detects MiniPay environment and auto-connects on mount.
+ * Detects MiniPay environment and exposes connection state.
+ * Auto-connect is handled by MiniPayAutoConnectPrivy / MiniPayAutoConnectStandalone
+ * in App.tsx so the right provider hooks are called in the right tree.
  *
- * Rules (celopedia-skill / minipay-guide.md):
+ * MiniPay rules (celopedia-skill / minipay-guide.md):
  *   - window.ethereum.isMiniPay === true → inside MiniPay WebView
- *   - Auto-connect via injected connector, no connect button shown
- *   - No personal_sign / eth_signTypedData
  *   - Legacy tx only — do NOT set maxFeePerGas / maxPriorityFeePerGas
- *   - feeCurrency for gas: USDm address (same as token) or USDC/USDT adapters
- *   - Only USDT / USDC / USDm are user-facing tokens in MiniPay
+ *   - Only USDT / USDC / USDm are user-facing tokens
  *   - Never display CELO or raw 0x addresses as primary identifiers
  */
 export function useMiniPay() {
   const [isMiniPay, setIsMiniPay] = useState(false);
-  const { connect } = useConnect();
   const { isConnected, address } = useAccount();
 
   useEffect(() => {
-    const detected =
+    setIsMiniPay(
       typeof window !== "undefined" &&
-      window.ethereum !== undefined &&
-      (window.ethereum as { isMiniPay?: boolean }).isMiniPay === true;
+        window.ethereum !== undefined &&
+        (window.ethereum as { isMiniPay?: boolean }).isMiniPay === true
+    );
+  }, []);
 
-    setIsMiniPay(detected);
-
-    if (detected && !isConnected) {
-      connect({ connector: injected({ target: "metaMask" }) });
-      analytics.walletConnected("minipay");
-    }
-  }, [connect, isConnected]);
-
-  // Identify wallet address when connected so PostHog ties events to the wallet
   useEffect(() => {
     if (address) analytics.identify(address as `0x${string}`);
   }, [address]);
